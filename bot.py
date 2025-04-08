@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Inline UserDetailsBot
-- Shows user details in inline mode when forwarding messages
-- /myid command to show user's own ID
-- Handles all message types safely
+Fixed Inline UserDetailsBot
+- Properly closed all brackets
+- Working inline buttons
+- Safe message handling
 """
 
 import logging
@@ -45,8 +45,8 @@ class InlineUserDetailsBot:
         
         await update.message.reply_text(
             "👋 Hi! I can show info about forwarded messages.\n\n"
-            "🔹 Forward any message to see details\n"
-            "🔹 Click buttons below or use commands:",
+            "◇ Forward any message to see details\n"
+            "◇ Click buttons below or use commands:",
             reply_markup=reply_markup
         )
 
@@ -70,17 +70,17 @@ class InlineUserDetailsBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle all messages with inline reply"""
         msg = update.message
-        if msg.forward_from:
+        if hasattr(msg, 'forward_from') and msg.forward_from:
             await self.show_user_details(msg, msg.forward_from)
-        elif msg.forward_from_chat:
+        elif hasattr(msg, 'forward_from_chat') and msg.forward_from_chat:
             await self.show_chat_details(msg, msg.forward_from_chat)
-        elif msg.forward_sender_name:
+        elif hasattr(msg, 'forward_sender_name') and msg.forward_sender_name:
             await self.show_private_forward(msg)
         else:
-            # For regular messages, offer to show sender info
             if msg.from_user:
                 keyboard = [
                     [InlineKeyboardButton("Show Sender Info", callback_data=f'show_{msg.from_user.id}')]
+                ]
                 await msg.reply_text(
                     "ℹ️ This is a regular message",
                     reply_markup=InlineKeyboardMarkup(keyboard)
@@ -117,7 +117,6 @@ class InlineUserDetailsBot:
             await query.delete_message()
         elif query.data.startswith('show_'):
             user_id = int(query.data.split('_')[1])
-            # In a real bot, you would fetch user details here
             await query.edit_message_text(
                 f"👤 User ID: <code>{user_id}</code>\n"
                 "⚠️ More details not available inline",
@@ -130,6 +129,6 @@ class InlineUserDetailsBot:
 
 if __name__ == "__main__":
     import os
-    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or "YOUR_TOKEN_HERE"
+    TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or "YOUR_TOKEN_HERE"  # REPLACE THIS
     bot = InlineUserDetailsBot(TOKEN)
     bot.run()
